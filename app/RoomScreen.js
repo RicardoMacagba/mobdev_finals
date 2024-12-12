@@ -19,17 +19,6 @@ const RoomScreen = () => {
         price: '',
     });
 
-    // const fetchRooms = async () => {
-    //     try {
-    //         const response = await axios.get(`${API_BASE_URL}/list_rooms`);
-    //         setRooms(response.data);
-    //     } catch (error) {
-    //         console.error('Error fetching rooms:', error);
-    //     }
-    // awddawdawdadaw
-        
-    // };
-
     const addRoom = async () => {
         if (!newRoom.name || !newRoom.type || !newRoom.price) {
             Alert.alert('Error', 'All fields are required.');

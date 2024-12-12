@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Text, View, TextInput, Button, Alert, StyleSheet } from 'react-native';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import React, { useState } from 'react';
+import { Alert, Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_BASE_URL } from '../constants/Config';
 
 const LoginScreen = ({ navigation }) => {
@@ -47,14 +47,20 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  const navigateToRegister = () => {
+    navigation.navigate('RegisterScreen'); // Navigate to RegisterScreen
+  };
+
   return (
     <View style={styles.container}>
-      <Text>Login</Text>
+      <Text style={styles.title}>Login</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
       <TextInput
         style={styles.input}
@@ -64,6 +70,13 @@ const LoginScreen = ({ navigation }) => {
         onChangeText={setPassword}
       />
       <Button title="Login" onPress={handleLogin} />
+
+      <View style={styles.registerContainer}>
+        <Text style={styles.registerText}>Don't have an account?</Text>
+        <TouchableOpacity onPress={navigateToRegister}>
+          <Text style={styles.registerLink}> Sign up here.</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -73,14 +86,35 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+    fontWeight: 'bold',
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
+    height: 50,
+    borderColor: '#ccc',
     borderWidth: 1,
-    marginBottom: 10,
-    width: '80%',
+    marginBottom: 15,
+    width: '100%',
+    borderRadius: 5,
     paddingHorizontal: 10,
+    fontSize: 16,
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  registerText: {
+    fontSize: 16,
+    color: '#555',
+  },
+  registerLink: {
+    fontSize: 16,
+    color: '#1E90FF',
   },
 });
 

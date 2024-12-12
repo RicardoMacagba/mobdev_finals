@@ -6,6 +6,7 @@ import HomeScreen from './HomeScreen';
 import HotelScreen from './HotelScreen';
 import LoginScreen from './LoginScreen'; // Ensure these are the correct paths to your screens
 import ProfileUpdateScreen from './ProfileUpdateScreen';
+import RegisterScreen from './RegisterScreen';
 import RoomScreen from './RoomScreen';
 import SplashScreen from './SplashScreen'; // Import the SplashScreen component
 
@@ -70,6 +71,12 @@ export default function App() {
             name="RoomScreen"
             component={RoomScreen}
             options={{ title: 'My Rooms' }}
+          />
+
+          <Stack.Screen
+            name="RegisterScreen"
+            component={RegisterScreen}
+            options={{ title: 'Register' }}
           />
 
         </Stack.Navigator>
