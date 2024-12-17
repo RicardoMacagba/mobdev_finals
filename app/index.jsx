@@ -2,14 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect, useState } from 'react';
+import BookingScreen from './BookingScreen';
+import EditRoomScreen from './EditRoomScreen';
 import HomeScreen from './HomeScreen';
 import HotelScreen from './HotelScreen';
 import LoginScreen from './LoginScreen'; // Ensure these are the correct paths to your screens
 import ProfileUpdateScreen from './ProfileUpdateScreen';
 import RegisterScreen from './RegisterScreen';
+import RoomListScreen from './RoomListScreen';
 import RoomScreen from './RoomScreen';
 import SplashScreen from './SplashScreen'; // Import the SplashScreen component
-
 
 const Stack = createStackNavigator();
 
@@ -77,6 +79,24 @@ export default function App() {
             name="RegisterScreen"
             component={RegisterScreen}
             options={{ title: 'Register' }}
+          />
+
+          <Stack.Screen
+            name="BookingScreen"
+            component={BookingScreen}
+            options={{ title: 'Bookings' }}
+          />
+
+          <Stack.Screen
+            name="RoomListScreen"
+            component={RoomListScreen}
+            options={{ title: 'Room List' }}
+          />
+
+          <Stack.Screen
+            name="EditRoomScreen"
+            component={EditRoomScreen}
+            options={{ title: 'Room Edit' }}
           />
 
         </Stack.Navigator>
