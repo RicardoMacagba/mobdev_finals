@@ -1,8 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useEffect, useState } from 'react';
-import { Alert, Button, FlatList, Image, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Button,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native';
 import { API_BASE_URL } from '../constants/Config';
 
 const RoomScreen = ({ navigation }) => {
@@ -14,6 +24,7 @@ const RoomScreen = ({ navigation }) => {
     const [status, setRoomStatus] = useState('available');
     const [imageUri, setImageUri] = useState(null);
     const [token, setToken] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     // Load token from AsyncStorage on mount
     useEffect(() => {
@@ -23,25 +34,25 @@ const RoomScreen = ({ navigation }) => {
                 if (storedUserInfo) {
                     const userInfo = JSON.parse(storedUserInfo);
                     setToken(userInfo.token);
-                    console.log(userInfo.token);
+                    console.log('Token:', userInfo.token);
                 }
             } catch (error) {
                 console.error('Error loading token:', error);
             }
         };
         loadToken();
-        fetchRooms(); // Initial fetch of rooms
     }, []);
 
     // Fetch rooms from the API
-    const fetchRooms = async () => {
-        try {
-            if (!token) {
-                console.warn('Token not available. Please log in again.');
-                Alert.alert('Authentication Error', 'Please log in again to fetch room data.');
-                return;
-            }
+    const fetchRooms = useCallback(async () => {
+        if (!token) {
+            Alert.alert('Authentication Error', 'Please log in again to fetch room data.');
+            return;
+        }
 
+        setIsLoading(true);
+
+        try {
             const response = await axios.get(`${API_BASE_URL}/listRooms`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -54,9 +65,14 @@ const RoomScreen = ({ navigation }) => {
         } catch (error) {
             console.error('Error fetching rooms:', error);
             Alert.alert('Error', error.response?.data?.message || 'An error occurred while fetching rooms.');
+        } finally {
+            setIsLoading(false);
         }
-    };
+    }, [token]);
 
+    useEffect(() => {
+        fetchRooms();
+    }, [fetchRooms]);
 
     // Pick an image for the room
     const pickImage = async () => {
@@ -91,6 +107,8 @@ const RoomScreen = ({ navigation }) => {
             type: 'image/jpeg',
         });
 
+        setIsLoading(true);
+
         try {
             const response = await axios.post(`${API_BASE_URL}/addRooms`, formData, {
                 headers: {
@@ -101,15 +119,16 @@ const RoomScreen = ({ navigation }) => {
 
             if (response.status === 200) {
                 Alert.alert('Success', 'Room added successfully.');
-                fetchRooms(); // Refresh the room list
-                clearForm(); // Clear form inputs
+                fetchRooms();
+                clearForm();
             } else {
                 Alert.alert('Failed to Add Room', response.data.message || 'Please try again.');
-                //clearForm();
             }
         } catch (error) {
             console.error('Error adding room:', error);
             Alert.alert('Error', 'An error occurred while adding the room.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -127,120 +146,86 @@ const RoomScreen = ({ navigation }) => {
         <View style={styles.container}>
             <Text style={styles.title}>Room Management</Text>
 
-            {/* Room List */}
-            <FlatList
-                data={rooms}
-                keyExtractor={(item) => item.id.toString()}
-                refreshing={isFetching} // state variable to control refreshing
-                onRefresh={fetchRooms} // Refresh data when pulled
-                renderItem={({ item }) => (
-                    <View style={styles.roomCard}>
-                        <Text style={styles.roomText}>Name: {item.name}</Text>
-                        <Text style={styles.roomText}>Type: {item.type}</Text>
-                        <Text style={styles.roomText}>Capacity: {item.capacity}</Text>
-                        <Text style={styles.roomText}>Price: ${item.price}</Text>
-                        <Text style={styles.roomText}>Status: {item.status}</Text>
-                        {item.image_url && (
-                            <Image
-                                source={{ uri: item.image_url }}
-                                style={styles.roomImage}
-                            />
+            {isLoading ? (
+                <ActivityIndicator size="large" color="#0000ff" />
+            ) : (
+                <>
+                    <FlatList
+                        data={rooms}
+                        keyExtractor={(item) => item.id.toString()}
+                        refreshing={isLoading}
+                        onRefresh={fetchRooms}
+                        renderItem={({ item }) => (
+                            <View style={styles.roomCard}>
+                                <Text style={styles.roomText}>Name: {item.name}</Text>
+                                <Text style={styles.roomText}>Type: {item.type}</Text>
+                                <Text style={styles.roomText}>Capacity: {item.capacity}</Text>
+                                <Text style={styles.roomText}>Price: ${item.price}</Text>
+                                <Text style={styles.roomText}>Status: {item.status}</Text>
+                                {item.image_url && (
+                                    <Image
+                                        source={{ uri: item.image_url }}
+                                        style={styles.roomImage}
+                                    />
+                                )}
+                            </View>
                         )}
-                    </View>
-                )}
-            />
+                    />
 
-
-            {/* Add Room Form */}
-            <TextInput
-                style={styles.input}
-                placeholder="Room Name"
-                value={name}
-                onChangeText={setRoomName}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Room Type (optional)"
-                value={type}
-                onChangeText={setRoomType}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Room Capacity (optional)"
-                value={capacity}
-                keyboardType="numeric"
-                onChangeText={setRoomCapacity}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Room Price"
-                value={price}
-                keyboardType="numeric"
-                onChangeText={setprice}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Room Status (default: available)"
-                value={status}
-                onChangeText={setRoomStatus}
-            />
-            <Button title="Pick Room Image" onPress={pickImage} />
-            {imageUri && (
-                <View style={styles.imagePreviewContainer}>
-                    <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-                </View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Room Name"
+                        value={name}
+                        onChangeText={setRoomName}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Room Type (optional)"
+                        value={type}
+                        onChangeText={setRoomType}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Room Capacity (optional)"
+                        value={capacity}
+                        keyboardType="numeric"
+                        onChangeText={setRoomCapacity}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Room Price"
+                        value={price}
+                        keyboardType="numeric"
+                        onChangeText={setprice}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Room Status (default: available)"
+                        value={status}
+                        onChangeText={setRoomStatus}
+                    />
+                    <Button title="Pick Room Image" onPress={pickImage} />
+                    {imageUri && (
+                        <View style={styles.imagePreviewContainer}>
+                            <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+                        </View>
+                    )}
+                    <Button title="Add Room" onPress={addRoom} />
+                </>
             )}
-            <Button title="Add Room" onPress={addRoom} />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#fff',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
-    },
-    roomCard: {
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-        marginBottom: 10,
-    },
-    roomText: {
-        fontSize: 16,
-        marginBottom: 5,
-    },
-    roomImage: {
-        width: '100%',
-        height: 150,
-        marginTop: 10,
-    },
-    input: {
-        height: 50,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        marginBottom: 15,
-        borderRadius: 5,
-        paddingHorizontal: 10,
-        fontSize: 16,
-    },
-    imagePreviewContainer: {
-        alignItems: 'center',
-        marginVertical: 15,
-    },
-    imagePreview: {
-        width: 100,
-        height: 100,
-        borderRadius: 5,
-        marginBottom: 10,
-    },
+    container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+    title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+    roomCard: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#ccc', marginBottom: 10 },
+    roomText: { fontSize: 16, marginBottom: 5 },
+    roomImage: { width: '100%', height: 150, marginTop: 10 },
+    input: { height: 50, borderColor: '#ccc', borderWidth: 1, marginBottom: 15, borderRadius: 5, paddingHorizontal: 10, fontSize: 16 },
+    imagePreviewContainer: { alignItems: 'center', marginVertical: 15 },
+    imagePreview: { width: 100, height: 100, borderRadius: 5, marginBottom: 10 },
 });
 
 export default RoomScreen;
